@@ -96,10 +96,8 @@ export default function AdminPointsDashboard() {
 
   async function createNewVersion() {
     if (!activeConfig) return
-    const newConfig = { ...activeConfig, version: activeConfig.version + 1, is_active: false, notes: '' }
-    delete newConfig.id
-    delete newConfig.created_at
-    delete newConfig.activated_at
+    const { id: _id, created_at: _ca, activated_at: _aa, ...rest } = activeConfig
+const newConfig = { ...rest, version: activeConfig.version + 1, is_active: false, notes: '' } as PointsConfig
     setEditingConfig(newConfig)
   }
 

@@ -14,7 +14,6 @@ import {
   calculateTotalPoints,
 } from '@/lib/points'
 
-
 // ── HOURLY JOB ────────────────────────────────────────────────
 // Runs every hour via Vercel cron
 export async function runHourlyJob(): Promise<void> {

@@ -4,7 +4,7 @@
 // Admin-only. Never exposed to public.
 // ============================================================
 
-import { supabaseAdmin } from './supabase'
+import { supabaseAdmin } from '@/lib/supabase'
 // ── Types ─────────────────────────────────────────────────────
 export interface PointsConfig {
   version: number

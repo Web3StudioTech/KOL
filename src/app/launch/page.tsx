@@ -65,19 +65,19 @@ export default function LaunchPage() {
       setMiningStep(MINING_STEPS[1])
       const { mineKolSalt } = await import('@/lib/saltMiner')
 
-      const bondingCurveAddress = process.env.NEXT_PUBLIC_BONDING_CURVE_ADDRESS!
-      const totalSupply = BigInt('1000000000000000000000000000') // 1B * 1e18
+      const bondingCurveAddress = process.env.NEXT_PUBLIC_BONDING_CURVE_ADDRESS || '0x0000000000000000000000000000000000000000'
+
+      // Bytecode hash — placeholder until contracts deployed
+      // In production this comes from the compiled KOLToken artifact
+      const bytecodeHash = '0x' + 'ab'.repeat(32)
 
       let salt = ''
       setMiningStep(MINING_STEPS[2])
 
       salt = await mineKolSalt(
         bondingCurveAddress,
-        name.trim(),
-        ticker.trim().toUpperCase(),
-        '', // uri (empty at launch, set via metadata)
-        totalSupply,
-        (attempts) => {
+        bytecodeHash,
+        (attempts: number) => {
           setAttempts(attempts)
           setMiningStep(`Mining... ${(attempts / 1000).toFixed(0)}K attempts`)
         }

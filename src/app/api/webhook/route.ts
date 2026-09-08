@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
             // Track trader volume for badge
             await updateTraderVolume(buyer.toLowerCase(), volumeUsd)
 
-            console.log(`[Webhook] Buy: ${ethInNum} ETH → $${ticker} by ${buyer.slice(0,8)}`)
+            console.log(`[Webhook] Buy: ${ethInNum} ETH → ${token.slice(0,8)} by ${buyer.slice(0,8)}`)
             break
           }
 

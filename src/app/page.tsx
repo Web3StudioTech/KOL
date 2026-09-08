@@ -50,7 +50,6 @@ export default function HomePage() {
     <>
       <Nav />
       <main>
-        {/* HERO */}
         <section style={{ position:'relative', minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', overflow:'hidden', padding:'120px 24px 80px' }}>
           <div className="hero-grid" />
           <div style={{ position:'absolute', width:'600px', height:'600px', borderRadius:'50%', filter:'blur(80px)', top:'-100px', left:'50%', transform:'translateX(-50%)', background:'radial-gradient(circle,rgba(0,229,255,0.12),transparent 70%)', pointerEvents:'none' }} />
@@ -83,7 +82,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* LIVE FEED */}
         <div style={{ background:'var(--bg2)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', padding:'10px 40px', display:'flex', alignItems:'center', gap:'16px', overflow:'hidden' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'6px', flexShrink:0 }}>
             <span className="live-dot" />
@@ -96,7 +94,6 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* TOKEN EXPLORER */}
         <section style={{ padding:'60px 40px', maxWidth:'1200px', margin:'0 auto' }}>
           <div style={{ marginBottom:'32px' }}>
             <div className="section-tag">Token Explorer</div>
@@ -124,7 +121,6 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* HOW IT WORKS */}
         <section style={{ padding:'100px 40px', background:'var(--bg2)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)' }}>
           <div style={{ maxWidth:'1200px', margin:'0 auto' }}>
             <div style={{ textAlign:'center', marginBottom:'72px' }}>
@@ -133,25 +129,21 @@ export default function HomePage() {
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'2px', background:'var(--border)' }}>
               {[
-                { num:'01', icon:'🚀', color:'cyan', title:'Anyone Launches', desc:'Deploy your token in 30 seconds with 0.0004 ETH.
-Receive 70% of every trading fee as creator royalty.
-Build your project towards $10M marketcap and claim a Creator badge.
-Achieve $50M marketcap to claim a Builder badge.' },
-                { num:'02', icon:'👑', color:'red',  title:'KOLs Discover', desc:'Verified KOLs with 5,000+ followers browse new launches. Call a token early and earn 0.05% from the KOL reward pool on every trade your call generates. Calls are recorded permanently onchain with exact price and timestamp.' },
+                { num:'01', icon:'🚀', color:'cyan', title:'Anyone Launches', desc:'Deploy your token in 30 seconds with 0.0004 ETH.\nReceive 70% of every trading fee as creator royalty.\nBuild your project towards $10M marketcap and claim a Creator badge.\nAchieve $50M marketcap to claim a Builder badge.' },
+                { num:'02', icon:'👑', color:'red', title:'KOLs Discover', desc:'Verified KOLs with 5,000+ followers browse new launches. Call a token early and earn 0.05% from the KOL reward pool on every trade your call generates. Calls are recorded permanently onchain with exact price and timestamp.' },
                 { num:'03', icon:'💰', color:'purple', title:'Everyone Earns', desc:'Creators earn 0.70% of every trade forever — including after graduation. KOLs earn 0.05% from the reward pool for accurate early calls. Platform earns 0.25%.' },
               ].map(s => (
                 <div key={s.num} style={{ background:'var(--bg2)', padding:'48px 40px', position:'relative', overflow:'hidden' }}>
                   <div style={{ position:'absolute', top:'16px', right:'24px', fontFamily:'Bebas Neue,sans-serif', fontSize:'80px', lineHeight:1, color:'var(--border)', letterSpacing:'2px' }}>{s.num}</div>
                   <div style={{ width:'52px', height:'52px', borderRadius:'6px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'24px', marginBottom:'24px', background: s.color==='cyan' ? 'rgba(0,229,255,0.1)' : s.color==='red' ? 'rgba(255,61,107,0.1)' : 'rgba(168,85,247,0.1)', border:`1px solid ${s.color==='cyan' ? 'rgba(0,229,255,0.2)' : s.color==='red' ? 'rgba(255,61,107,0.2)' : 'rgba(168,85,247,0.2)'}` }}>{s.icon}</div>
                   <h3 style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'24px', fontWeight:700, letterSpacing:'1px', textTransform:'uppercase', marginBottom:'12px' }}>{s.title}</h3>
-                  <p style={{ fontSize:'15px', color:'var(--muted)', lineHeight:1.7 }}>{s.desc}</p>
+                  <p style={{ fontSize:'15px', color:'var(--muted)', lineHeight:1.7, whiteSpace:'pre-line' }}>{s.desc}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* FOOTER */}
         <footer style={{ padding:'40px', borderTop:'1px solid var(--border)', background:'var(--bg2)' }}>
           <div style={{ maxWidth:'1200px', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'16px' }}>
             <span style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'20px', letterSpacing:'3px', color:'var(--accent)' }}>ONCHAIN<span style={{color:'var(--accent2)'}}>KOL</span></span>

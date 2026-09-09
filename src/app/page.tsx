@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Nav from '@/components/layout/Nav'
-import { formatMktCap, BADGE_LABELS, BADGE_ICONS, truncateWallet } from '@/lib/auth'
+import { formatMktCap, truncateWallet } from '@/lib/auth'
 import BadgeImage from '@/components/ui/BadgeImage'
 
 const STATS = [
@@ -39,9 +39,13 @@ export default function HomePage() {
   }, [sort])
 
   useEffect(() => {
+    const items = [
+      '$MOON launched just now',
+      'NiquiTrades called $PEPE · just now',
+      '$DEGEN launched anonymously · just now',
+    ]
     const t = setInterval(() => {
-      const items = ['$MOON launched just now','NiquiTrades called $PEPE · just now','$DEGEN launched anonymously · just now']
-      setFeed(p => [items[Math.floor(Math.random()*items.length)], ...p.slice(0,5)])
+      setFeed(p => [items[Math.floor(Math.random() * items.length)], ...p.slice(0, 5)])
     }, 7000)
     return () => clearInterval(t)
   }, [])
@@ -56,24 +60,26 @@ export default function HomePage() {
           <div style={{ position:'absolute', width:'600px', height:'600px', borderRadius:'50%', filter:'blur(80px)', top:'-100px', left:'50%', transform:'translateX(-50%)', background:'radial-gradient(circle,rgba(0,229,255,0.12),transparent 70%)', pointerEvents:'none' }} />
           <div style={{ position:'absolute', width:'400px', height:'400px', borderRadius:'50%', filter:'blur(80px)', bottom:0, right:'-100px', background:'radial-gradient(circle,rgba(255,61,107,0.1),transparent 70%)', pointerEvents:'none' }} />
           <div style={{ position:'relative', zIndex:1 }}>
-            <div style={{ display:'inline-flex', alignItems:'center', gap:'8px', padding:'6px 16px', border:'1px solid rgba(0,200,5,0.3)', borderRadius:'100px', fontSize:'12px', fontWeight:600, letterSpacing:'2px', textTransform:'uppercase', color:'#00C805', marginBottom:'32px', background:'rgba(0,200,5,0.06)', animation:'fadeUp 0.8s ease both', fontFamily:'Barlow Condensed,sans-serif' }}>
-              <span style={{ width:'6px', height:'6px', borderRadius:'50%', background:'#00C805', display:'inline-block', animation:'pulse 1.5s infinite' }} /> Now Live on Robinhood Chain
+            <div style={{ display:'inline-flex', alignItems:'center', gap:'8px', padding:'6px 16px', border:'1px solid rgba(0,200,5,0.3)', borderRadius:'100px', fontSize:'12px', fontWeight:600, letterSpacing:'2px', textTransform:'uppercase', color:'#00C805', marginBottom:'32px', background:'rgba(0,200,5,0.06)', fontFamily:'Barlow Condensed,sans-serif' }}>
+              <span style={{ width:'6px', height:'6px', borderRadius:'50%', background:'#00C805', display:'inline-block' }} /> Now Live on Robinhood Chain
             </div>
-            <h1 style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'clamp(64px,12vw,140px)', lineHeight:0.9, letterSpacing:'2px', animation:'fadeUp 0.8s 0.1s ease both', marginBottom:'8px' }}>
-              <span style={{ display:'block', color:'var(--text)' }}>CREATOR LAUNCH IT.</span>
+            <h1 style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'clamp(64px,12vw,140px)', lineHeight:0.9, letterSpacing:'2px', marginBottom:'8px' }}>
+              <span style={{ display:'block' }}>CREATOR LAUNCH IT.</span>
               <span style={{ display:'block', color:'var(--accent)' }}>KOL CALL IT.</span>
               <span style={{ display:'block', WebkitTextStroke:'2px var(--accent2)', color:'transparent' }}>EARN TOGETHER.</span>
             </h1>
-            <p style={{ fontSize:'clamp(16px,2.5vw,20px)', color:'var(--muted)', maxWidth:'600px', margin:'24px auto 16px', fontWeight:300, lineHeight:1.6, animation:'fadeUp 0.8s 0.2s ease both' }}>
-              The first KOL-powered token Launchpad. Now on Robinhood Chain.<br/><br/>
-              KOL call a token early and receive reward from KOL pool (0.05%), based on accuracy.<br/>
+            <p style={{ fontSize:'clamp(14px,2vw,18px)', color:'var(--muted)', maxWidth:'560px', margin:'24px auto 16px', lineHeight:1.7 }}>
+              The first KOL-powered token Launchpad. Now on Robinhood Chain.
+              <br /><br />
+              KOL call a token early and receive reward from KOL pool (0.05%), based on accuracy.
+              <br />
               Creator receive royalty (0.70%).
             </p>
-            <div style={{ display:'flex', gap:'16px', justifyContent:'center', flexWrap:'wrap', animation:'fadeUp 0.8s 0.3s ease both', marginBottom:'64px' }}>
+            <div style={{ display:'flex', gap:'16px', justifyContent:'center', flexWrap:'wrap', marginBottom:'64px' }}>
               <Link href="/launch" className="btn btn-primary btn-lg">⚡ Launch a Token</Link>
               <Link href="/kol" className="btn btn-secondary btn-lg">👑 KOL Zone</Link>
             </div>
-            <div style={{ display:'flex', gap:'48px', justifyContent:'center', flexWrap:'wrap', animation:'fadeUp 0.8s 0.4s ease both' }}>
+            <div style={{ display:'flex', gap:'48px', justifyContent:'center', flexWrap:'wrap' }}>
               {STATS.map(s => (
                 <div key={s.label} style={{ textAlign:'center' }}>
                   <div className="stat-num">{s.value}</div>
@@ -106,12 +112,16 @@ export default function HomePage() {
           </div>
           <div style={{ display:'flex', gap:'6px', flexWrap:'wrap', marginBottom:'24px' }}>
             {SORTS.map(s => (
-              <button key={s.key} className={`btn btn-sm ${sort === s.key ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setSort(s.key)}>{s.label}</button>
+              <button key={s.key} className={`btn btn-sm ${sort === s.key ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setSort(s.key)}>
+                {s.label}
+              </button>
             ))}
           </div>
           {loading ? (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:'12px' }}>
-              {[...Array(6)].map((_,i) => <div key={i} style={{ height:'280px', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'4px', opacity:0.4 }} />)}
+              {[...Array(6)].map((_, i) => (
+                <div key={i} style={{ height:'280px', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'4px', opacity:0.4 }} />
+              ))}
             </div>
           ) : tokens.length === 0 ? (
             <div style={{ textAlign:'center', padding:'6rem 2rem', color:'var(--muted)' }}>
@@ -131,20 +141,26 @@ export default function HomePage() {
           <div style={{ maxWidth:'1200px', margin:'0 auto' }}>
             <div style={{ textAlign:'center', marginBottom:'72px' }}>
               <div className="section-tag">How It Works</div>
-              <h2 style={{ fontSize:'clamp(36px,6vw,72px)', lineHeight:1 }}>Simple. Fair. <span style={{color:'var(--accent)'}}>Onchain.</span></h2>
+              <h2 style={{ fontSize:'clamp(36px,6vw,72px)', lineHeight:1 }}>Simple. Fair. <span style={{ color:'var(--accent)' }}>Onchain.</span></h2>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'2px', background:'var(--border)' }}>
               {[
-                { num:'01', icon:'🚀', color:'cyan', title:'Anyone Launches', desc:'Deploy your token in 30 seconds with 0.0004 ETH.
-Receive 70% of every trading fee as creator royalty.
-Project hit $10M market cap → Claim Creator badge (limit 1,000).
-Project hit $50M market cap → Claim Builder badge (limit 500).' },
-                { num:'02', icon:'👑', color:'red',  title:'KOLs Discover', desc:'2,000+ Twitter followers → KOL Badge (limit 700). 5,000+ Twitter followers → KOL Crown Badge (limit 300). Call a token early and earn 0.05% from the KOL reward pool based on accuracy. Calls recorded permanently onchain.' },
-                { num:'03', icon:'💰', color:'purple', title:'Everyone Earns', desc:'Traders hit $10K volume → Anon badge (limit 5,000). Traders hit $50K volume → Trader badge (limit 2,500). All badges are FCFS — first come, first served. Permanently recorded onchain.' },
+                {
+                  num:'01', icon:'🚀', color:'cyan', title:'Anyone Launches',
+                  desc:'Deploy your token in 30 seconds with 0.0004 ETH. Receive 70% of every trading fee as creator royalty. Project hit $10M market cap → Creator badge (limit 1,000). Project hit $50M market cap → Builder badge (limit 500).'
+                },
+                {
+                  num:'02', icon:'👑', color:'red', title:'KOLs Discover',
+                  desc:'2,000+ Twitter followers → KOL Badge (limit 700). 5,000+ Twitter followers → KOL Crown Badge (limit 300). Call a token early and earn 0.05% from the KOL reward pool based on accuracy. Calls recorded permanently onchain.'
+                },
+                {
+                  num:'03', icon:'💰', color:'purple', title:'Everyone Earns',
+                  desc:'Traders hit $10K volume → Anon badge (limit 5,000). Traders hit $50K volume → Trader badge (limit 2,500). All badges are FCFS — first come, first served. Permanently recorded onchain.'
+                },
               ].map(s => (
                 <div key={s.num} style={{ background:'var(--bg2)', padding:'48px 40px', position:'relative', overflow:'hidden' }}>
                   <div style={{ position:'absolute', top:'16px', right:'24px', fontFamily:'Bebas Neue,sans-serif', fontSize:'80px', lineHeight:1, color:'var(--border)', letterSpacing:'2px' }}>{s.num}</div>
-                  <div style={{ width:'52px', height:'52px', borderRadius:'6px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'24px', marginBottom:'24px', background: s.color==='cyan' ? 'rgba(0,229,255,0.1)' : s.color==='red' ? 'rgba(255,61,107,0.1)' : 'rgba(168,85,247,0.1)', border:`1px solid ${s.color==='cyan' ? 'rgba(0,229,255,0.2)' : s.color==='red' ? 'rgba(255,61,107,0.2)' : 'rgba(168,85,247,0.2)'}` }}>{s.icon}</div>
+                  <div style={{ width:'52px', height:'52px', borderRadius:'6px', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'24px', marginBottom:'24px', background: s.color === 'cyan' ? 'rgba(0,229,255,0.1)' : s.color === 'red' ? 'rgba(255,61,107,0.1)' : 'rgba(168,85,247,0.1)', border:`1px solid ${s.color === 'cyan' ? 'rgba(0,229,255,0.2)' : s.color === 'red' ? 'rgba(255,61,107,0.2)' : 'rgba(168,85,247,0.2)'}` }}>{s.icon}</div>
                   <h3 style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'24px', fontWeight:700, letterSpacing:'1px', textTransform:'uppercase', marginBottom:'12px' }}>{s.title}</h3>
                   <p style={{ fontSize:'15px', color:'var(--muted)', lineHeight:1.7 }}>{s.desc}</p>
                 </div>
@@ -156,13 +172,17 @@ Project hit $50M market cap → Claim Builder badge (limit 500).' },
         {/* FOOTER */}
         <footer style={{ padding:'40px', borderTop:'1px solid var(--border)', background:'var(--bg2)' }}>
           <div style={{ maxWidth:'1200px', margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'16px' }}>
-            <span style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'20px', letterSpacing:'3px', color:'var(--accent)' }}>ONCHAIN<span style={{color:'var(--accent2)'}}>KOL</span></span>
+            <span style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'20px', letterSpacing:'3px', color:'var(--accent)' }}>
+              ONCHAIN<span style={{ color:'var(--accent2)' }}>KOL</span>
+            </span>
             <div style={{ display:'flex', gap:'24px' }}>
-              {['Twitter','Telegram','Discord','Docs'].map(l => (
+              {['Twitter', 'Telegram', 'Discord', 'Docs'].map(l => (
                 <a key={l} href="#" style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'12px', fontWeight:600, letterSpacing:'1.5px', textTransform:'uppercase', color:'var(--muted)', textDecoration:'none' }}>{l}</a>
               ))}
             </div>
-            <span style={{ fontSize:'12px', color:'var(--muted)' }}>© 2026 OnchainKOL · <span style={{color:'#00C805',fontWeight:600}}>Robinhood Chain</span></span>
+            <span style={{ fontSize:'12px', color:'var(--muted)' }}>
+              © 2026 OnchainKOL · <span style={{ color:'#00C805', fontWeight:600 }}>Robinhood Chain</span>
+            </span>
           </div>
         </footer>
       </main>
@@ -176,7 +196,7 @@ function TokenCard({ token }: { token: any }) {
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:'12px' }}>
         <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
           <div style={{ width:44, height:44, borderRadius:'6px', background: token.image_url ? `url(${token.image_url}) center/cover` : 'var(--surface)', border:'1px solid var(--border)', display:'flex', alignItems:'center', justifyContent:'center', fontFamily:'Bebas Neue,sans-serif', fontSize:'13px', color:'var(--accent)', flexShrink:0 }}>
-            {!token.image_url && token.ticker?.slice(0,3)}
+            {!token.image_url && token.ticker?.slice(0, 3)}
           </div>
           <div>
             <div style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'20px', letterSpacing:'1px', lineHeight:1 }}>${token.ticker}</div>
@@ -184,13 +204,18 @@ function TokenCard({ token }: { token: any }) {
           </div>
         </div>
         <div style={{ display:'flex', flexDirection:'column', gap:'4px', alignItems:'flex-end' }}>
-          {token.kol_call_count > 0 && <span className="badge badge-hot">🔥 {token.kol_call_count} call{token.kol_call_count>1?'s':''}</span>}
+          {token.kol_call_count > 0 && <span className="badge badge-hot">🔥 {token.kol_call_count} call{token.kol_call_count > 1 ? 's' : ''}</span>}
           {token.bonding_pct > 85 && <span className="badge badge-grad">⚡ Graduating</span>}
-          {(Date.now()-new Date(token.created_at).getTime()) < 3600000 && <span className="badge badge-new">New</span>}
+          {(Date.now() - new Date(token.created_at).getTime()) < 3600000 && <span className="badge badge-new">New</span>}
         </div>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'6px', marginBottom:'10px' }}>
-        {[['Mkt Cap',formatMktCap(token.market_cap_usd)],['Volume 24h',formatMktCap(token.volume_24h_usd)],['Holders',(token.holder_count||0).toLocaleString()],['Calls',token.kol_call_count||0]].map(([k,v]) => (
+        {[
+          ['Mkt Cap', formatMktCap(token.market_cap_usd)],
+          ['Volume 24h', formatMktCap(token.volume_24h_usd)],
+          ['Holders', (token.holder_count || 0).toLocaleString()],
+          ['Calls', token.kol_call_count || 0],
+        ].map(([k, v]) => (
           <div key={k} style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'3px', padding:'6px 10px' }}>
             <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'10px', fontWeight:700, letterSpacing:'1.5px', textTransform:'uppercase', color:'var(--muted)', marginBottom:'2px' }}>{k}</div>
             <div style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'16px', letterSpacing:'0.5px' }}>{v}</div>
@@ -200,19 +225,21 @@ function TokenCard({ token }: { token: any }) {
       <div style={{ marginBottom:'10px' }}>
         <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'4px' }}>
           <span style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'10px', fontWeight:700, letterSpacing:'1.5px', textTransform:'uppercase', color:'var(--muted)' }}>Bonding Curve</span>
-          <span style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'14px', color:'var(--accent)', letterSpacing:'1px' }}>{(token.bonding_pct||0).toFixed(0)}%</span>
+          <span style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'14px', color:'var(--accent)', letterSpacing:'1px' }}>{(token.bonding_pct || 0).toFixed(0)}%</span>
         </div>
-        <div className="progress"><div className="progress-fill" style={{ width:`${token.bonding_pct||0}%` }} /></div>
+        <div className="progress">
+          <div className="progress-fill" style={{ width:`${token.bonding_pct || 0}%` }} />
+        </div>
       </div>
       {token.contract_address && (
         <div style={{ fontSize:'10px', color:'var(--muted)', fontFamily:'Courier New,monospace', marginBottom:'8px' }}>
-          {token.contract_address.slice(0,-6)}<span style={{color:'var(--accent)',fontWeight:700}}>{token.contract_address.slice(-6)}</span>
+          {token.contract_address.slice(0, -6)}<span style={{ color:'var(--accent)', fontWeight:700 }}>{token.contract_address.slice(-6)}</span>
         </div>
       )}
       <div style={{ display:'flex', alignItems:'center', gap:'6px', paddingTop:'8px', borderTop:'1px solid var(--border)' }}>
-        <BadgeImage badge={token.launcher_badge||'anon'} size={20} showLabel />
+        <BadgeImage badge={token.launcher_badge || 'anon'} size={20} showLabel />
         <span style={{ fontSize:'11px', color:'var(--muted)' }}>
-          {token.launcher_twitter ? `@${token.launcher_twitter}` : truncateWallet(token.launcher_wallet||'0x0000')}
+          {token.launcher_twitter ? `@${token.launcher_twitter}` : truncateWallet(token.launcher_wallet || '0x0000')}
         </span>
       </div>
     </Link>

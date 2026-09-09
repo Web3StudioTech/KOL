@@ -109,6 +109,10 @@ export async function POST(req: NextRequest) {
 
             await updateTraderVolume(buyer.toLowerCase(), volumeUsd)
 
+            // Auto-detect + auto-issue any newly-earned badges (FCFS, no claim needed)
+            await supabaseAdmin.rpc('check_wallet_badges', { p_wallet: buyer.toLowerCase() })
+            await supabaseAdmin.rpc('check_creator_badges', { p_contract_address: token.toLowerCase() })
+
             console.log(`[Webhook] Buy: ${ethInNum} ETH → ${token.slice(0,8)} by ${buyer.slice(0,8)}`)
             break
           }
@@ -150,6 +154,10 @@ export async function POST(req: NextRequest) {
             })
 
             await updateTraderVolume(seller.toLowerCase(), volumeUsd)
+
+            // Auto-detect + auto-issue any newly-earned badges (FCFS, no claim needed)
+            await supabaseAdmin.rpc('check_wallet_badges', { p_wallet: seller.toLowerCase() })
+            await supabaseAdmin.rpc('check_creator_badges', { p_contract_address: token.toLowerCase() })
 
             console.log(`[Webhook] Sell: ${ethOutNum} ETH ← ${token.slice(0,8)} by ${seller.slice(0,8)}`)
             break

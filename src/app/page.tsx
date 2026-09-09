@@ -5,19 +5,11 @@ import Nav from '@/components/layout/Nav'
 import { formatMktCap, truncateWallet } from '@/lib/auth'
 import BadgeImage from '@/components/ui/BadgeImage'
 
-const STATS = [
-  { label:'24H Volume', value:'$8.4M', sub:'+31% today' },
-  { label:'Tokens Today', value:'1,240', sub:'88 last hour' },
-  { label:'KOL Calls', value:'342', sub:'67% of volume' },
-  { label:'Fees Earned', value:'$84K', sub:'today' },
-]
-const FEED = [
-  'CryptoKing called $PEPE2 · 2m ago',
-  '$MOON launched · 5m ago',
-  'SolBull called $WAGMI · 11m ago',
-  '$REKT launched anonymously · 14m ago',
-  'AlphaWolf called $DEGEN · 22m ago',
-]
+// Now backed by real data (/api/stats, /api/activity) — safe to flip on
+// even with zero activity, since it'll honestly show $0 / 0 rather than
+// fake numbers. Kept as a flag in case you want a quiet launch period.
+const SHOW_LIVE_STATS = false
+
 const SORTS = [
   { key:'trending', label:'🔥 Trending' },
   { key:'new',      label:'🆕 New' },
@@ -27,7 +19,8 @@ const SORTS = [
 
 export default function HomePage() {
   const [sort, setSort]       = useState('trending')
-  const [feed, setFeed]       = useState(FEED)
+  const [feed, setFeed]       = useState<string[]>([])
+  const [stats, setStats]     = useState<any>(null)
   const [tokens, setTokens]   = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -39,15 +32,20 @@ export default function HomePage() {
   }, [sort])
 
   useEffect(() => {
-    const items = [
-      '$MOON launched just now',
-      'NiquiTrades called $PEPE · just now',
-      '$DEGEN launched anonymously · just now',
-    ]
-    const t = setInterval(() => {
-      setFeed(p => [items[Math.floor(Math.random() * items.length)], ...p.slice(0, 5)])
-    }, 7000)
-    return () => clearInterval(t)
+    if (!SHOW_LIVE_STATS) return
+
+    function loadStats() {
+      fetch('/api/stats').then(r => r.json()).then(setStats).catch(() => {})
+    }
+    function loadFeed() {
+      fetch('/api/activity').then(r => r.json()).then(d => setFeed(d.feed || [])).catch(() => {})
+    }
+
+    loadStats()
+    loadFeed()
+    const statsTimer = setInterval(loadStats, 60000)
+    const feedTimer   = setInterval(loadFeed, 15000)
+    return () => { clearInterval(statsTimer); clearInterval(feedTimer) }
   }, [])
 
   return (
@@ -71,7 +69,7 @@ export default function HomePage() {
             <p style={{ fontSize:'clamp(14px,2vw,18px)', color:'var(--muted)', maxWidth:'560px', margin:'24px auto 16px', lineHeight:1.7 }}>
               The first KOL-powered token Launchpad. Now on Robinhood Chain.
               <br /><br />
-              KOL call a token early and receive reward from KOL pool (0.05%), based on accuracy.
+              KOL call a token early and receive reward from KOL pool (0.05%).
               <br />
               Creator receive royalty (0.70%).
             </p>
@@ -79,30 +77,55 @@ export default function HomePage() {
               <Link href="/launch" className="btn btn-primary btn-lg">⚡ Launch a Token</Link>
               <Link href="/kol" className="btn btn-secondary btn-lg">👑 KOL Zone</Link>
             </div>
-            <div style={{ display:'flex', gap:'48px', justifyContent:'center', flexWrap:'wrap' }}>
-              {STATS.map(s => (
-                <div key={s.label} style={{ textAlign:'center' }}>
-                  <div className="stat-num">{s.value}</div>
-                  <div className="stat-label">{s.label}</div>
-                  <div style={{ fontSize:'11px', color:'var(--accent)', fontFamily:'Barlow Condensed,sans-serif', fontWeight:600, letterSpacing:'1px', marginTop:'2px' }}>{s.sub}</div>
-                </div>
-              ))}
-            </div>
+            {SHOW_LIVE_STATS && stats && (
+              <div style={{ display:'flex', gap:'48px', justifyContent:'center', flexWrap:'wrap' }}>
+                {[
+                  {
+                    label: '24H Volume',
+                    value: formatMktCap(stats.volume_24h_usd || 0),
+                    sub: stats.volume_change_pct != null ? `${stats.volume_change_pct >= 0 ? '+' : ''}${stats.volume_change_pct}% today` : '—',
+                  },
+                  {
+                    label: 'Tokens Today',
+                    value: (stats.tokens_today || 0).toLocaleString(),
+                    sub: `${stats.tokens_last_hour || 0} last hour`,
+                  },
+                  {
+                    label: 'KOL Calls',
+                    value: (stats.kol_calls_today || 0).toLocaleString(),
+                    sub: `${(stats.kol_calls_all_time || 0).toLocaleString()} all-time`,
+                  },
+                  {
+                    label: 'Fees Earned',
+                    value: formatMktCap(stats.fees_earned_24h_usd || 0),
+                    sub: 'today',
+                  },
+                ].map(s => (
+                  <div key={s.label} style={{ textAlign:'center' }}>
+                    <div className="stat-num">{s.value}</div>
+                    <div className="stat-label">{s.label}</div>
+                    <div style={{ fontSize:'11px', color:'var(--accent)', fontFamily:'Barlow Condensed,sans-serif', fontWeight:600, letterSpacing:'1px', marginTop:'2px' }}>{s.sub}</div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
 
         {/* LIVE FEED */}
-        <div style={{ background:'var(--bg2)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', padding:'10px 40px', display:'flex', alignItems:'center', gap:'16px', overflow:'hidden' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:'6px', flexShrink:0 }}>
-            <span className="live-dot" />
-            <span style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'var(--accent2)' }}>Live</span>
+        {SHOW_LIVE_STATS && (
+          <div style={{ background:'var(--bg2)', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', padding:'10px 40px', display:'flex', alignItems:'center', gap:'16px', overflow:'hidden' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:'6px', flexShrink:0 }}>
+              <span className="live-dot" />
+              <span style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'var(--accent2)' }}>Live</span>
+            </div>
+            <div style={{ display:'flex', gap:'32px', overflow:'hidden' }}>
+              {feed.map((item, i) => (
+                <span key={i} style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'13px', letterSpacing:'0.5px', color:'var(--muted)', whiteSpace:'nowrap' }}>{item}</span>
+              ))}
+            </div>
           </div>
-          <div style={{ display:'flex', gap:'32px', overflow:'hidden' }}>
-            {feed.map((item, i) => (
-              <span key={i} style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'13px', letterSpacing:'0.5px', color:'var(--muted)', whiteSpace:'nowrap' }}>{item}</span>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* TOKEN EXPLORER */}
         <section style={{ padding:'60px 40px', maxWidth:'1200px', margin:'0 auto' }}>
@@ -151,11 +174,11 @@ export default function HomePage() {
                 },
                 {
                   num:'02', icon:'👑', color:'red', title:'KOLs Discover',
-                  desc:'2,000+ Twitter followers → KOL Badge (limit 700). 5,000+ Twitter followers → KOL Crown Badge (limit 300). Call a token early and earn 0.05% from the KOL reward pool based on accuracy. Calls recorded permanently onchain.'
+                  desc:'2,000+ Twitter followers → KOL Badge (limit 700). 5,000+ Twitter followers → KOL Crown Badge (limit 300). Call a token early and earn 0.05% from the KOL reward pool. Calls recorded permanently onchain.'
                 },
                 {
                   num:'03', icon:'💰', color:'purple', title:'Everyone Earns',
-                  desc:'Traders hit $10K volume → Anon badge (limit 5,000). Traders hit $50K volume → Trader badge (limit 2,500). All badges are FCFS — first come, first served. Permanently recorded onchain.'
+                  desc:'Traders hit $10K volume → Anon badge (limit 5,000). Traders hit $50K volume → Trader badge (limit 2,500). All badges are FCFS — first come, first served.'
                 },
               ].map(s => (
                 <div key={s.num} style={{ background:'var(--bg2)', padding:'48px 40px', position:'relative', overflow:'hidden' }}>

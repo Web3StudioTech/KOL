@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Nav from '@/components/layout/Nav'
 import { useAppStore } from '@/lib/store'
 import { truncateWallet } from '@/lib/auth'
+import { useMyBadges } from '@/lib/badges'
 import BadgeImage from '@/components/ui/BadgeImage'
 
 type Step = 'connect' | 'nonce' | 'tweet' | 'verify' | 'pending' | 'done'
@@ -15,6 +16,7 @@ export default function VerifyPage() {
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState('')
   const [handle, setHandle]     = useState('')
+  const { hasBadge } = useMyBadges(address)
 
   // Auto-advance if already connected
   useEffect(() => {
@@ -24,8 +26,8 @@ export default function VerifyPage() {
   }, [connected, address])
 
   // Already verified
-  const isKol      = launcher?.badge === 'kol' || launcher?.badge === 'kol_crown'
-  const isCrown    = launcher?.badge === 'kol_crown'
+  const isKol      = hasBadge('kol') || hasBadge('kol_crown')
+  const isCrown    = hasBadge('kol_crown')
 
   async function connectWallet() {
     const eth = (window as any).ethereum
@@ -110,7 +112,7 @@ export default function VerifyPage() {
           {/* Already verified */}
           {isKol && (
             <div style={{ textAlign:'center', padding:'3rem', background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'4px' }}>
-              <BadgeImage badge={launcher?.badge || 'kol'} size={64} />
+              <BadgeImage badge={isCrown ? 'kol_crown' : 'kol'} size={64} />
               <div style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'36px', letterSpacing:'2px', marginTop:'16px', marginBottom:'8px', color: isCrown ? '#ec4899' : '#3b82f6' }}>
                 {isCrown ? 'KOL CROWN VERIFIED!' : 'KOL VERIFIED!'}
               </div>
@@ -229,7 +231,7 @@ https://onchainkol.com`}
                   </button>
 
                   {/* Open Twitter button */}
-                  <a
+                  
                     href={tweetLink}
                     target="_blank"
                     className="btn btn-primary"

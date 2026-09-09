@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+
+// Fetch live follower count from X API v2 (pay-per-use pricing, ~$0.01/lookup).
+// Returns null on any failure so verification never blocks on this.
+async function fetchFollowerCount(handle: string): Promise<number | null> {
+  const token = process.env.TWITTER_BEARER_TOKEN
+  if (!token) return null
+  try {
+    const res = await fetch(
+      `https://api.twitter.com/2/users/by/username/${encodeURIComponent(handle)}?user.fields=public_metrics`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    )
+    if (!res.ok) return null
+    const json = await res.json()
+    return json?.data?.public_metrics?.followers_count ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function POST(req: NextRequest) {
   const { tweet_url, wallet_address } = await req.json()
   if (!tweet_url || !wallet_address) return NextResponse.json({ error: 'tweet_url and wallet_address required' }, { status: 400 })
@@ -19,16 +38,26 @@ export async function POST(req: NextRequest) {
     if (tweetWallet.toLowerCase() !== wallet_address.toLowerCase()) throw new Error('Wallet address mismatch')
     const { data: nonceRecord } = await supabaseAdmin.from('nonces').select('*').eq('wallet_address', wallet_address).eq('nonce', tweetNonce).single()
     if (!nonceRecord) throw new Error('Invalid or expired nonce')
+
+    const followerCount = await fetchFollowerCount(twitterHandle)
+
     const { data: existing } = await supabaseAdmin.from('launchers').select('id').eq('wallet_address', wallet_address).single()
-    const updateData = { twitter_handle: twitterHandle, verified_at: new Date().toISOString(), verification_tweet: tweet_url }
+    const updateData: Record<string, any> = { twitter_handle: twitterHandle, verified_at: new Date().toISOString(), verification_tweet: tweet_url }
+    if (followerCount !== null) updateData.follower_count = followerCount
     if (existing) {
       await supabaseAdmin.from('launchers').update(updateData).eq('wallet_address', wallet_address)
     } else {
       await supabaseAdmin.from('launchers').insert({ wallet_address, ...updateData })
     }
     await supabaseAdmin.from('nonces').delete().eq('wallet_address', wallet_address).eq('nonce', tweetNonce)
+
+    // Auto-detect + auto-issue KOL / KOL Crown badges immediately if the threshold is already met
+    if (followerCount !== null) {
+      await supabaseAdmin.rpc('check_wallet_badges', { p_wallet: wallet_address })
+    }
+
     const { data: launcher } = await supabaseAdmin.from('launchers').select('*').eq('wallet_address', wallet_address).single()
-    return NextResponse.json({ success: true, launcher, twitter_handle: twitterHandle })
+    return NextResponse.json({ success: true, launcher, twitter_handle: twitterHandle, follower_count: followerCount })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 400 })
   }

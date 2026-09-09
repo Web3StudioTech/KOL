@@ -231,7 +231,7 @@ https://onchainkol.com`}
                   </button>
 
                   {/* Open Twitter button */}
-                  
+                  <a
                     href={tweetLink}
                     target="_blank"
                     className="btn btn-primary"

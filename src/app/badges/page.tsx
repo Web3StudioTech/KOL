@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import Nav from '@/components/layout/Nav'
 import { useAppStore } from '@/lib/store'
 import { BADGE_IMAGES, BADGE_LABELS, BADGE_COLORS, BADGE_LIMITS, BADGE_REQUIREMENTS, formatMktCap, truncateWallet } from '@/lib/auth'
+import { useMyBadges } from '@/lib/badges'
 import BadgeImage from '@/components/ui/BadgeImage'
 import Link from 'next/link'
 
@@ -17,6 +18,7 @@ const BADGES = [
 
 export default function BadgesPage() {
   const { address, connected, launcher } = useAppStore()
+  const { badges: myBadges, badgeKeys, hasBadge } = useMyBadges(address)
   const [counts, setCounts]   = useState<Record<string, number>>({})
   const [holders, setHolders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,7 +36,7 @@ export default function BadgesPage() {
       .then(d => setHolders(d.holders || []))
   }, [])
 
-  const myBadge = launcher?.badge || null
+  const earnedBadges = badgeKeys.filter(b => b !== 'anon')
 
   return (
     <>
@@ -49,27 +51,31 @@ export default function BadgesPage() {
               EARN YOUR <span style={{ color:'var(--accent4)' }}>BADGE</span>
             </h1>
             <p style={{ color:'var(--muted)', fontSize:'16px', maxWidth:'560px', lineHeight:1.6 }}>
-              6 exclusive badges. Limited supply. First come, first served. Each badge is permanently recorded onchain.
+              6 exclusive badges. Limited supply. First come, first served. Awarded automatically the moment you qualify.
             </p>
           </div>
         </div>
 
         <div style={{ maxWidth:'1200px', margin:'0 auto', padding:'40px' }}>
 
-          {/* My badge */}
-          {connected && myBadge && myBadge !== 'anon' && (
-            <div style={{ background:'var(--bg2)', border:`1px solid ${BADGE_COLORS[myBadge]}40`, borderRadius:'4px', padding:'20px 24px', marginBottom:'24px', display:'flex', alignItems:'center', gap:'16px' }}>
-              <BadgeImage badge={myBadge} size={56} />
-              <div style={{ flex:1 }}>
-                <div style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'24px', letterSpacing:'1px', color:BADGE_COLORS[myBadge], marginBottom:'4px' }}>
-                  You have the {BADGE_LABELS[myBadge]} Badge!
+          {/* My badges */}
+          {connected && earnedBadges.length > 0 && (
+            <div style={{ display:'flex', flexDirection:'column', gap:'10px', marginBottom:'24px' }}>
+              {earnedBadges.map(badge => (
+                <div key={badge} style={{ background:'var(--bg2)', border:`1px solid ${BADGE_COLORS[badge]}40`, borderRadius:'4px', padding:'20px 24px', display:'flex', alignItems:'center', gap:'16px' }}>
+                  <BadgeImage badge={badge} size={56} />
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'24px', letterSpacing:'1px', color:BADGE_COLORS[badge], marginBottom:'4px' }}>
+                      You have the {BADGE_LABELS[badge]} Badge!
+                    </div>
+                    <div style={{ fontSize:'13px', color:'var(--muted)' }}>{BADGE_REQUIREMENTS[badge]}</div>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'var(--muted)', marginBottom:'4px' }}>Badge Holder ✓</div>
+                    <div style={{ fontSize:'11px', color:'var(--accent)' }}>#{myBadges.find(b => b.badge === badge)?.badge_number?.toLocaleString()}</div>
+                  </div>
                 </div>
-                <div style={{ fontSize:'13px', color:'var(--muted)' }}>{BADGE_REQUIREMENTS[myBadge]}</div>
-              </div>
-              <div style={{ textAlign:'right' }}>
-                <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'var(--muted)', marginBottom:'4px' }}>Badge Holder ✓</div>
-                <div style={{ fontSize:'11px', color:'var(--accent)' }}>Permanently onchain ✓</div>
-              </div>
+              ))}
             </div>
           )}
 
@@ -80,7 +86,7 @@ export default function BadgesPage() {
               const limit     = BADGE_LIMITS[b.key]
               const pct       = Math.min(100, (issued / limit) * 100)
               const remaining = Math.max(0, limit - issued)
-              const isMine    = myBadge === b.key
+              const isMine    = hasBadge(b.key)
               const isFull    = issued >= limit
 
               return (

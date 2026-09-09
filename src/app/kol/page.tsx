@@ -30,7 +30,7 @@ export default function KolPage() {
               DISCOVER. <span style={{color:'var(--accent)'}}>CALL.</span> <span style={{WebkitTextStroke:'2px var(--accent2)',color:'transparent'}}>EARN.</span>
             </h1>
             <p style={{color:'var(--muted)',fontSize:'16px',maxWidth:'560px',lineHeight:1.6,marginBottom:'32px'}}>
-              Browse new token launches on Robinhood Chain. Call a token early and earn 0.05% from the KOL reward pool based on accuracy. Max 3 calls per day.
+              Browse new token launches on Robinhood Chain. Call a token early and earn 0.05% from the KOL reward pool. Max 3 calls per day.
             </p>
             {!isKol && (
               <div style={{padding:'12px 16px',background:'rgba(0,229,255,0.06)',border:'1px solid rgba(0,229,255,0.2)',borderRadius:'3px',marginBottom:'16px',display:'flex',alignItems:'center',gap:'12px',flexWrap:'wrap'}}>

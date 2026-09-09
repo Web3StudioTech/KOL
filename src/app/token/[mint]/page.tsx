@@ -153,7 +153,7 @@ export default function TokenPage() {
               <h1 style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'32px', letterSpacing:'1px' }}>${token.ticker}</h1>
               {token.kol_call_count > 0 && <span className="badge badge-hot">🔥 {token.kol_call_count} KOL calls</span>}
               {isGraduated && <span className="badge badge-grad">⚡ Graduated to KOLSwap</span>}
-              {token.kol_pass_earned && <span style={{ padding:'2px 8px', borderRadius:'2px', fontFamily:'Barlow Condensed,sans-serif', fontSize:'10px', fontWeight:700, letterSpacing:'1.5px', background:'rgba(255,215,0,0.15)', color:'var(--accent3)', border:'1px solid rgba(255,215,0,0.3)' }}>🎫 Creator Pass #{token.kol_pass_number}</span>}
+              {token.creator_badge_number != null && <span style={{ padding:'2px 8px', borderRadius:'2px', fontFamily:'Barlow Condensed,sans-serif', fontSize:'10px', fontWeight:700, letterSpacing:'1.5px', background:'rgba(255,215,0,0.15)', color:'var(--accent3)', border:'1px solid rgba(255,215,0,0.3)' }}>🏆 Creator Badge #{token.creator_badge_number}</span>}
             </div>
             <div style={{ display:'flex', alignItems:'center', gap:'12px', marginTop:'4px', flexWrap:'wrap' }}>
               <BadgeImage badge={token.launcher_badge||'anon'} size={18} showLabel />

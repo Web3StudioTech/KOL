@@ -237,7 +237,7 @@ export default function LaunchPage() {
                     ['KOL reward',    '0.05% pool share',    'var(--accent4)'],
                     ['Platform fee',  '0.25%',               'var(--muted)'],
                     ['Graduation',    '$69K market cap',     'var(--accent)'],
-                    ['Creator Pass',  '$10M volume milestone','var(--accent3)'],
+                    ['Creator Badge',  '$10M market cap milestone','var(--accent3)'],
                   ].map(([k, v, c]) => (
                     <div key={k} style={{ display:'flex', justifyContent:'space-between', fontSize:'13px', padding:'5px 0', borderBottom:'1px solid rgba(30,45,61,0.5)' }}>
                       <span style={{ color:'var(--muted)' }}>{k}</span>

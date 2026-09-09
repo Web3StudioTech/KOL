@@ -15,9 +15,16 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const { wallet_address, token_id, thesis } = body
   if (!wallet_address || !token_id) return NextResponse.json({ error: 'wallet_address, token_id required' }, { status: 400 })
-  const { data: launcher } = await supabaseAdmin.from('launchers').select('id,badge').eq('wallet_address', wallet_address).single()
+  const { data: launcher } = await supabaseAdmin.from('launchers').select('id').eq('wallet_address', wallet_address).single()
   if (!launcher) return NextResponse.json({ error: 'Wallet not registered' }, { status: 404 })
-  if (!['kol'].includes(launcher.badge)) return NextResponse.json({ error: 'KOL badge required' }, { status: 403 })
+  const { data: kolBadge } = await supabaseAdmin
+    .from('launcher_badges')
+    .select('badge')
+    .eq('wallet_address', wallet_address)
+    .in('badge', ['kol', 'kol_crown'])
+    .limit(1)
+    .maybeSingle()
+  if (!kolBadge) return NextResponse.json({ error: 'KOL badge required' }, { status: 403 })
   const { data: token } = await supabaseAdmin.from('tokens').select('price_eth,market_cap_usd,launcher_id').eq('id', token_id).single()
   if (!token) return NextResponse.json({ error: 'Token not found' }, { status: 404 })
   if (token.launcher_id === launcher.id) return NextResponse.json({ error: 'Cannot call your own token' }, { status: 400 })

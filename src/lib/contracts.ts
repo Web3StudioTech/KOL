@@ -185,6 +185,39 @@ export const BONDING_CURVE_ABI = [
       { name: 'timestamp',     type: 'uint256', indexed: false },
     ]
   },
+  {
+    name: 'RugDetected',
+    type: 'event',
+    inputs: [
+      { name: 'token',     type: 'address', indexed: true  },
+      { name: 'creator',   type: 'address', indexed: true  },
+      { name: 'trigger',   type: 'string',  indexed: false },
+      { name: 'timestamp', type: 'uint256', indexed: false },
+    ]
+  },
+  {
+    name: 'KolPassEarned',
+    type: 'event',
+    inputs: [
+      { name: 'token',        type: 'address', indexed: true  },
+      { name: 'creator',      type: 'address', indexed: true  },
+      { name: 'passNumber',   type: 'uint256', indexed: false },
+      { name: 'marketCapUsd', type: 'uint256', indexed: false },
+      { name: 'timestamp',    type: 'uint256', indexed: false },
+    ]
+  },
+  {
+    name: 'KolCallSubmitted',
+    type: 'event',
+    inputs: [
+      { name: 'callId',      type: 'bytes32', indexed: true  },
+      { name: 'kol',         type: 'address', indexed: true  },
+      { name: 'token',       type: 'address', indexed: true  },
+      { name: 'priceAtCall', type: 'uint256', indexed: false },
+      { name: 'thesis',      type: 'string',  indexed: false },
+      { name: 'timestamp',   type: 'uint256', indexed: false },
+    ]
+  },
 ]
 
 // ── KOLSwap ABI ──────────────────────────────────────────────

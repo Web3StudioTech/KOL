@@ -4,10 +4,8 @@ import { ethers } from 'ethers'
 import Nav from '@/components/layout/Nav'
 import { useAppStore } from '@/lib/store'
 import { formatMktCap } from '@/lib/auth'
-import { useTrade, switchToRobinhoodChain, getEthPriceUsd } from '@/lib/web3'
-
-const SLIPPAGE = 5
-const QUICK_AMOUNTS = ['0.01', '0.05', '0.1', '0.5']
+import { useTrade, useEthBalance, useTokenBalance, switchToRobinhoodChain, getEthPriceUsd } from '@/lib/web3'
+import PriceChart from '@/components/token/PriceChart'
 
 export default function KOLSwapPage() {
   const { address, connected } = useAppStore()
@@ -15,17 +13,21 @@ export default function KOLSwapPage() {
   const [selectedToken, setSelected]= useState<any>(null)
   const [tab, setTab]               = useState<'buy'|'sell'>('buy')
   const [amount, setAmount]         = useState('0.1')
-  const [quote, setQuote]           = useState('')
+  const [quote, setQuote]           = useState<bigint>(BigInt(0))
   const [quoting, setQuoting]       = useState(false)
   const [ethPrice, setEthPrice]     = useState(3000)
   const [txMsg, setTxMsg]           = useState('')
   const [search, setSearch]         = useState('')
   const [loading, setLoading]       = useState(true)
+  const [slippage, setSlippage]     = useState(5)
+  const [showSlippage, setShowSlippage] = useState(false)
 
   const isGraduated = true // KOLSwap only shows graduated tokens
   const tokenAddr   = selectedToken?.contract_address || ''
 
   const { buy, sell, loading: tradeLoading, txHash, error: tradeError, getQuote } = useTrade(tokenAddr, isGraduated)
+  const { formatted: ethBalance, refresh: refreshEthBalance } = useEthBalance(address || '')
+  const { formatted: tokenBalance, refresh: refreshTokenBalance } = useTokenBalance(tokenAddr, address || '')
 
   useEffect(() => {
     fetch('/api/tokens?sort=grad&limit=50')
@@ -42,33 +44,65 @@ export default function KOLSwapPage() {
 
   // Get quote when amount or token changes
   useEffect(() => {
-    if (!tokenAddr || !amount || parseFloat(amount) <= 0) { setQuote(''); return }
+    if (!tokenAddr || !amount || parseFloat(amount) <= 0) { setQuote(BigInt(0)); return }
     setQuoting(true)
     const timer = setTimeout(async () => {
       try {
         const q = await getQuote(amount, tab === 'buy')
-        if (tab === 'buy') {
-          setQuote(`≈ ${parseFloat(ethers.formatUnits(q, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })} $${selectedToken?.ticker}`)
-        } else {
-          setQuote(`≈ ${parseFloat(ethers.formatEther(q)).toFixed(6)} ETH`)
-        }
-      } catch { setQuote('') }
+        setQuote(q)
+      } catch { setQuote(BigInt(0)) }
       finally { setQuoting(false) }
     }, 600)
     return () => clearTimeout(timer)
   }, [amount, tab, tokenAddr])
+
+  const quoteNum   = tab === 'buy' ? parseFloat(ethers.formatUnits(quote, 18)) : parseFloat(ethers.formatEther(quote))
+  const quoteLabel = quote > 0
+    ? (tab === 'buy'
+        ? quoteNum.toLocaleString(undefined, { maximumFractionDigits: 2 })
+        : quoteNum.toFixed(6))
+    : ''
+
+  // Rate: always expressed as 1 ETH = X token, regardless of buy/sell direction
+  const amountNum = parseFloat(amount) || 0
+  const rate = quote > 0 && amountNum > 0
+    ? (tab === 'buy' ? quoteNum / amountNum : amountNum / quoteNum)
+    : 0
+
+  // USD value of what's received
+  const usdValue = quote > 0
+    ? (tab === 'buy' ? amountNum * ethPrice : quoteNum * ethPrice)
+    : 0
+
+  // Min received after slippage
+  const minReceived = quote > 0 ? quoteNum * (100 - slippage) / 100 : 0
+
+  // Creator royalty (0.70%) on the ETH side of the trade, in USD
+  const tradeEthValue = tab === 'buy' ? amountNum : quoteNum
+  const creatorRoyaltyUsd = tradeEthValue * ethPrice * 0.007
+
+  const currentBalance = tab === 'buy' ? parseFloat(ethBalance) : parseFloat(tokenBalance)
+
+  function setAmountFromPct(pct: number) {
+    if (!currentBalance || currentBalance <= 0) return
+    // Leave a small buffer off Max for ETH gas when buying
+    const usable = tab === 'buy' && pct === 100 ? Math.max(currentBalance - 0.002, 0) : currentBalance * (pct / 100)
+    setAmount(usable > 0 ? usable.toFixed(6) : '0')
+  }
 
   async function handleSwap() {
     setTxMsg('')
     try {
       await switchToRobinhoodChain()
       if (tab === 'buy') {
-        const hash = await buy(amount, SLIPPAGE)
+        const hash = await buy(amount, slippage)
         setTxMsg(`✅ Swap complete! Tx: ${hash?.slice(0,10)}...`)
       } else {
-        const hash = await sell(amount, SLIPPAGE)
+        const hash = await sell(amount, slippage)
         setTxMsg(`✅ Swap complete! Tx: ${hash?.slice(0,10)}...`)
       }
+      refreshEthBalance()
+      refreshTokenBalance()
     } catch (err: any) {
       setTxMsg(`❌ ${err.message || 'Swap failed'}`)
     }
@@ -78,6 +112,7 @@ export default function KOLSwapPage() {
     p.ticker?.toLowerCase().includes(search.toLowerCase()) ||
     p.name?.toLowerCase().includes(search.toLowerCase())
   )
+
 
   return (
     <>
@@ -125,7 +160,7 @@ export default function KOLSwapPage() {
               ) : filtered.map(token => (
                 <div
                   key={token.id}
-                  onClick={() => { setSelected(token); setAmount('0.1'); setQuote(''); setTxMsg('') }}
+                  onClick={() => { setSelected(token); setAmount('0.1'); setQuote(BigInt(0)); setTxMsg('') }}
                   style={{
                     display:'flex', alignItems:'center', gap:'10px',
                     padding:'10px 12px',
@@ -176,6 +211,15 @@ export default function KOLSwapPage() {
                     </div>
                   </div>
 
+                  {/* Price Chart */}
+                  {selectedToken.contract_address && (
+                    <PriceChart
+                      tokenId={selectedToken.id}
+                      ticker={selectedToken.ticker}
+                      priceEth={selectedToken.price_eth || 0}
+                    />
+                  )}
+
                   {/* Stats */}
                   <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'8px', marginBottom:'12px' }}>
                     {[
@@ -211,9 +255,9 @@ export default function KOLSwapPage() {
                   <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'4px', overflow:'hidden' }}>
 
                     {/* Tabs */}
-                    <div style={{ display:'flex' }}>
+                    <div style={{ display:'flex', alignItems:'center' }}>
                       {(['buy','sell'] as const).map(t => (
-                        <button key={t} onClick={() => { setTab(t); setQuote('') }} style={{
+                        <button key={t} onClick={() => { setTab(t); setQuote(BigInt(0)) }} style={{
                           flex:1, padding:'14px',
                           background: tab===t ? (t==='buy'?'var(--green)':'var(--red)') : 'var(--bg3)',
                           color: tab===t ? '#000' : 'var(--muted)',
@@ -222,6 +266,23 @@ export default function KOLSwapPage() {
                           transition:'all 0.2s',
                         }}>{t.toUpperCase()}</button>
                       ))}
+                      <div style={{ position:'relative', flexShrink:0, background:'var(--bg3)' }}>
+                        <button
+                          onClick={() => setShowSlippage(s => !s)}
+                          title="Slippage settings"
+                          style={{ height:'100%', padding:'0 14px', background:'transparent', border:'none', borderLeft:'1px solid var(--border)', cursor:'pointer', color:'var(--muted)', fontSize:'16px' }}
+                        >⚙️ {slippage}%</button>
+                        {showSlippage && (
+                          <div style={{ position:'absolute', top:'100%', right:0, zIndex:10, background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'4px', padding:'10px', width:'180px', boxShadow:'0 4px 16px rgba(0,0,0,0.3)' }}>
+                            <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'10px', fontWeight:700, letterSpacing:'1.5px', textTransform:'uppercase', color:'var(--muted)', marginBottom:'8px' }}>Slippage tolerance</div>
+                            <div style={{ display:'flex', gap:'4px' }}>
+                              {[1, 5, 10].map(p => (
+                                <button key={p} onClick={() => { setSlippage(p); setShowSlippage(false) }} style={{ flex:1, padding:'6px', fontFamily:'Barlow Condensed,sans-serif', fontSize:'12px', fontWeight:700, background: slippage===p ? 'var(--accent)' : 'var(--bg3)', color: slippage===p ? '#000' : 'var(--muted)', border:'1px solid var(--border)', borderRadius:'2px', cursor:'pointer' }}>{p}%</button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div style={{ padding:'16px' }}>
@@ -229,6 +290,11 @@ export default function KOLSwapPage() {
                       <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'4px', padding:'14px', marginBottom:'4px' }}>
                         <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'8px' }}>
                           <span style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'var(--muted)' }}>You Pay</span>
+                          {connected && (
+                            <span style={{ fontSize:'11px', color:'var(--muted)' }}>
+                              Balance: {currentBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })} {tab === 'buy' ? 'ETH' : `$${selectedToken.ticker}`}
+                            </span>
+                          )}
                         </div>
                         <div style={{ display:'flex', alignItems:'center', gap:'10px' }}>
                           <input
@@ -254,12 +320,12 @@ export default function KOLSwapPage() {
                             )}
                           </div>
                         </div>
-                        {/* Quick amounts */}
-                        {tab === 'buy' && (
+                        {/* Quick amounts — % of balance */}
+                        {connected && currentBalance > 0 && (
                           <div style={{ display:'flex', gap:'4px', marginTop:'8px' }}>
-                            {QUICK_AMOUNTS.map(q => (
-                              <button key={q} onClick={() => setAmount(q)} style={{ flex:1, padding:'4px', fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'2px', cursor:'pointer', color:'var(--muted)' }}>
-                                {q}
+                            {[25, 50, 75, 100].map(pct => (
+                              <button key={pct} onClick={() => setAmountFromPct(pct)} style={{ flex:1, padding:'4px', fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'2px', cursor:'pointer', color:'var(--muted)' }}>
+                                {pct === 100 ? 'Max' : `${pct}%`}
                               </button>
                             ))}
                           </div>
@@ -269,7 +335,7 @@ export default function KOLSwapPage() {
                       {/* Swap arrow */}
                       <div style={{ display:'flex', justifyContent:'center', margin:'-2px 0', position:'relative', zIndex:1 }}>
                         <button
-                          onClick={() => { setTab(tab === 'buy' ? 'sell' : 'buy'); setQuote('') }}
+                          onClick={() => { setTab(tab === 'buy' ? 'sell' : 'buy'); setQuote(BigInt(0)) }}
                           style={{ width:32, height:32, borderRadius:'50%', background:'var(--bg2)', border:`3px solid var(--bg)`, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'14px', color:'var(--muted)' }}
                         >
                           ⇅
@@ -278,24 +344,38 @@ export default function KOLSwapPage() {
 
                       {/* You receive */}
                       <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'4px', padding:'14px', marginBottom:'12px' }}>
-                        <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'var(--muted)', marginBottom:'8px' }}>You Receive</div>
+                        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:'8px' }}>
+                          <span style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'var(--muted)' }}>You Receive</span>
+                          {connected && (
+                            <span style={{ fontSize:'11px', color:'var(--muted)' }}>
+                              Balance: {(tab === 'buy' ? parseFloat(tokenBalance) : parseFloat(ethBalance)).toLocaleString(undefined, { maximumFractionDigits: 4 })} {tab === 'buy' ? `$${selectedToken.ticker}` : 'ETH'}
+                            </span>
+                          )}
+                        </div>
                         <div style={{ display:'flex', alignItems:'center', gap:'10px', justifyContent:'space-between' }}>
                           <div style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'22px', letterSpacing:'1px', color: quoting ? 'var(--muted)' : 'var(--text)' }}>
-                            {quoting ? '...' : quote || '—'}
+                            {quoting ? '...' : quoteLabel || '—'}
                           </div>
                           <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'13px', fontWeight:700, color: tab === 'buy' ? 'var(--accent)' : 'var(--muted)' }}>
                             {tab === 'buy' ? `$${selectedToken.ticker}` : 'ETH'}
                           </div>
                         </div>
+                        {usdValue > 0 && !quoting && (
+                          <div style={{ fontSize:'12px', color:'var(--muted)', marginTop:'4px' }}>
+                            ≈ ${usdValue.toLocaleString(undefined, { maximumFractionDigits: 2 })} USD
+                          </div>
+                        )}
                       </div>
 
                       {/* Details */}
-                      {quote && (
+                      {quote > 0 && (
                         <div style={{ background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'3px', padding:'10px 12px', marginBottom:'12px', fontSize:'12px' }}>
                           {[
-                            ['Slippage',        `${SLIPPAGE}%`],
-                            ['Platform fee',    '1% (0.70% → creator)'],
-                            ['Price impact',    '< 1%'],
+                            ['Rate',              rate > 0 ? `1 ETH = ${rate.toLocaleString(undefined, { maximumFractionDigits: 0 })} $${selectedToken.ticker}` : '—'],
+                            ['Slippage',          `${slippage}%`],
+                            ['Platform fee (1.05%)', '0.25% platform · 0.05% KOL pool · 0.05% referral'],
+                            ['Creator royalty',   `0.70% ≈ $${creatorRoyaltyUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`],
+                            ['Min received',      `${minReceived.toLocaleString(undefined, { maximumFractionDigits: tab === 'buy' ? 2 : 6 })} ${tab === 'buy' ? `$${selectedToken.ticker}` : 'ETH'}`],
                           ].map(([k,v]) => (
                             <div key={k} style={{ display:'flex', justifyContent:'space-between', padding:'3px 0', color:'var(--muted)' }}>
                               <span>{k}</span>

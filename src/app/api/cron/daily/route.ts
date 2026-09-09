@@ -16,6 +16,37 @@ async function getTokenPrice(contractAddress: string, provider: ethers.JsonRpcPr
   } catch { return 0 }
 }
 
+// Re-check follower counts for already-verified KOLs, so growth into
+// KOL Crown after initial verification is caught automatically.
+async function refreshKolFollowerCounts(log: string[]) {
+  const token = process.env.TWITTER_BEARER_TOKEN
+  if (!token) { log.push('[Cron] Skipping follower refresh — TWITTER_BEARER_TOKEN not set'); return }
+
+  const { data: verified } = await supabaseAdmin
+    .from('launchers')
+    .select('wallet_address, twitter_handle, follower_count')
+    .not('twitter_handle', 'is', null)
+
+  for (const l of (verified || [])) {
+    try {
+      const res = await fetch(
+        `https://api.twitter.com/2/users/by/username/${encodeURIComponent(l.twitter_handle)}?user.fields=public_metrics`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+      if (!res.ok) continue
+      const json = await res.json()
+      const newCount = json?.data?.public_metrics?.followers_count
+      if (typeof newCount !== 'number' || newCount === l.follower_count) continue
+
+      await supabaseAdmin.from('launchers').update({ follower_count: newCount }).eq('wallet_address', l.wallet_address)
+      await supabaseAdmin.rpc('check_wallet_badges', { p_wallet: l.wallet_address })
+      log.push(`[Cron] @${l.twitter_handle} followers ${l.follower_count} → ${newCount}`)
+    } catch (e: any) {
+      log.push(`[Cron] ⚠️ Follower refresh failed for @${l.twitter_handle}: ${e.message}`)
+    }
+  }
+}
+
 export async function GET(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
@@ -28,6 +59,9 @@ export async function GET(req: NextRequest) {
     const priceRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/price`)
     const { price: ethPriceUsd } = await priceRes.json()
     log.push(`[Cron] ETH price: $${ethPriceUsd}`)
+
+    // Refresh KOL follower counts and auto-issue any newly-earned badges
+    await refreshKolFollowerCounts(log)
 
     // Step 1 — Resolve pending calls 24h+ old
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()

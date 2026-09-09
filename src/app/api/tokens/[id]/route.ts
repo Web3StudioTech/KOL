@@ -36,6 +36,17 @@ export async function GET(
     return NextResponse.json({ error: 'Token not found' }, { status: 404 })
   }
 
+  // Real source of truth for Creator/Builder badges is launcher_badges,
+  // keyed by source_token — not the legacy kol_pass_* columns on tokens.
+  const { data: tokenBadges } = await supabaseAdmin
+    .from('launcher_badges')
+    .select('badge, badge_number')
+    .eq('source_token', token.contract_address)
+    .in('badge', ['creator', 'builder'])
+
+  const creatorBadge = (tokenBadges || []).find(b => b.badge === 'creator')
+  const builderBadge = (tokenBadges || []).find(b => b.badge === 'builder')
+
   // Flatten launcher fields for easy frontend use
   const result = {
     ...token,
@@ -44,6 +55,8 @@ export async function GET(
     launcher_avatar:  token.launchers?.twitter_avatar_url,
     launcher_badge:   token.launchers?.badge || 'anon',
     launcher_followers: token.launchers?.follower_count || 0,
+    creator_badge_number: creatorBadge?.badge_number ?? null,
+    builder_badge_number: builderBadge?.badge_number ?? null,
   }
 
   return NextResponse.json({ token: result })

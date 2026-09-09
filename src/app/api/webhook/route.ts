@@ -209,13 +209,15 @@ export async function POST(req: NextRequest) {
 
           // ── KOL Pass earned ───────────────────────────────
           case 'KolPassEarned': {
-            const { token, creator, passNumber, totalVolumeUsd } = parsed.args
+            const { token, creator, passNumber, marketCapUsd } = parsed.args
 
             await supabaseAdmin
               .from('tokens')
               .update({
                 kol_pass_earned: true,
                 kol_pass_number: Number(passNumber),
+                kol_pass_market_cap_usd: parseFloat(marketCapUsd.toString()),
+                kol_pass_earned_at: new Date().toISOString(),
               })
               .eq('contract_address', token.toLowerCase())
 

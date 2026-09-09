@@ -4,11 +4,13 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
 import { truncateWallet, BADGE_LABELS, BADGE_ICONS } from '@/lib/auth'
+import { useMyBadges } from '@/lib/badges'
 import BadgeImage from '@/components/ui/BadgeImage'
 
 export default function Nav() {
   const pathname = usePathname()
   const { address, connected, launcher, theme, toggleTheme, showLeaderboard, disconnect } = useAppStore()
+  const { badgeKeys, highestBadge } = useMyBadges(address)
   const [scrolled, setScrolled] = useState(false)
   const [showWalletMenu, setShowWalletMenu] = useState(false)
 
@@ -78,8 +80,8 @@ export default function Nav() {
         {connected && address ? (
           <div style={{ position:'relative' }}>
             <button onClick={() => setShowWalletMenu(!showWalletMenu)} className="btn btn-secondary btn-sm">
-              {launcher?.badge && launcher.badge !== 'anon' && (
-                <span>{BADGE_ICONS[launcher.badge]}</span>
+              {highestBadge && highestBadge !== 'anon' && (
+                <span>{BADGE_ICONS[highestBadge]}</span>
               )}
               {truncateWallet(address)}
             </button>
@@ -88,7 +90,16 @@ export default function Nav() {
                 {launcher?.twitter_handle && (
                   <div style={{ padding:'8px 12px', borderBottom:'1px solid var(--border)', marginBottom:'4px' }}>
                     <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'13px', fontWeight:700 }}>@{launcher.twitter_handle}</div>
-                    <div style={{ fontSize:'11px', color:'var(--muted)' }}>{BADGE_LABELS[launcher.badge]} · {launcher.follower_count?.toLocaleString()} followers</div>
+                    <div style={{ fontSize:'11px', color:'var(--muted)' }}>{launcher.follower_count?.toLocaleString()} followers</div>
+                    {badgeKeys.filter(b => b !== 'anon').length > 0 && (
+                      <div style={{ display:'flex', flexWrap:'wrap', gap:'4px', marginTop:'6px' }}>
+                        {badgeKeys.filter(b => b !== 'anon').map(b => (
+                          <span key={b} style={{ fontSize:'10px', padding:'2px 6px', background:'var(--bg3)', border:'1px solid var(--border)', borderRadius:'100px' }}>
+                            {BADGE_ICONS[b]} {BADGE_LABELS[b]}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
                 <button onClick={() => { disconnect(); setShowWalletMenu(false) }} style={{ width:'100%', padding:'8px 12px', background:'transparent', border:'none', cursor:'pointer', color:'var(--accent2)', fontFamily:'Barlow Condensed,sans-serif', fontSize:'12px', fontWeight:700, letterSpacing:'1px', textAlign:'left' }}>

@@ -3,13 +3,15 @@ import { useState, useEffect } from 'react'
 import Nav from '@/components/layout/Nav'
 import { useAppStore } from '@/lib/store'
 import { formatMktCap, BADGE_LABELS, BADGE_ICONS } from '@/lib/auth'
+import { useMyBadges } from '@/lib/badges'
 
 export default function KolPage() {
-  const { launcher } = useAppStore()
+  const { launcher, address } = useAppStore()
   const [tab, setTab]     = useState<'discover'|'my-calls'|'top-kols'>('discover')
   const [tokens, setTokens] = useState<any[]>([])
   const [calls, setCalls]   = useState<any[]>([])
-  const isKol = launcher?.badge === 'kol' || launcher?.badge === 'kol_crown'
+  const { hasBadge } = useMyBadges(address)
+  const isKol = hasBadge('kol') || hasBadge('kol_crown')
 
   useEffect(() => {
     fetch('/api/tokens?sort=new&limit=20').then(r=>r.json()).then(d=>setTokens(d.tokens||[]))

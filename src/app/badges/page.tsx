@@ -67,7 +67,7 @@ export default function BadgesPage() {
                 <div style={{ fontSize:'13px', color:'var(--muted)' }}>{BADGE_REQUIREMENTS[myBadge]}</div>
               </div>
               <div style={{ textAlign:'right' }}>
-                <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'var(--muted)', marginBottom:'4px' }}>Badge #{launcher?.kol_badge_number || launcher?.trader_badge_number || '—'}</div>
+                <div style={{ fontFamily:'Barlow Condensed,sans-serif', fontSize:'11px', fontWeight:700, letterSpacing:'2px', textTransform:'uppercase', color:'var(--muted)', marginBottom:'4px' }}>Badge Holder ✓</div>
                 <div style={{ fontSize:'11px', color:'var(--accent)' }}>Permanently onchain ✓</div>
               </div>
             </div>

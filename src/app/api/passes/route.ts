@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   if (wallet) {
     const { data: passes } = await supabaseAdmin
       .from('tokens')
-      .select('id, ticker, name, kol_pass_number, volume_total_usd, contract_address, creator_wallet, kol_pass_earned_at')
+      .select('id, ticker, name, kol_pass_number, kol_pass_market_cap_usd, contract_address, creator_wallet, kol_pass_earned_at')
       .eq('creator_wallet', wallet.toLowerCase())
       .eq('kol_pass_earned', true)
       .order('kol_pass_number', { ascending: true })
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
       passes: (passes || []).map(p => ({
         id: p.id, ticker: p.ticker, name: p.name,
         pass_number: p.kol_pass_number,
-        volume_at_earn: p.volume_total_usd,
+        market_cap_at_earn: p.kol_pass_market_cap_usd,
         creator_wallet: p.creator_wallet,
         earned_at: p.kol_pass_earned_at,
         tx_hash: null,
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   const { data: passes } = await supabaseAdmin
     .from('tokens')
-    .select('id, ticker, name, kol_pass_number, volume_total_usd, contract_address, creator_wallet, kol_pass_earned_at')
+    .select('id, ticker, name, kol_pass_number, kol_pass_market_cap_usd, contract_address, creator_wallet, kol_pass_earned_at')
     .eq('kol_pass_earned', true)
     .order('kol_pass_number', { ascending: true })
     .limit(50)
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     passes: (passes || []).map(p => ({
       id: p.id, ticker: p.ticker,
       pass_number: p.kol_pass_number,
-      volume_at_earn: p.volume_total_usd,
+      market_cap_at_earn: p.kol_pass_market_cap_usd,
       creator_wallet: p.creator_wallet,
       earned_at: p.kol_pass_earned_at,
     })),

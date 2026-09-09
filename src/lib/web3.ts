@@ -387,25 +387,45 @@ export function useKolCall(tokenAddress: string) {
   return { submitCall, loading, error, txHash }
 }
 
+// ── useEthBalance hook ─────────────────────────────────────────
+export function useEthBalance(walletAddress: string) {
+  const [balance, setBalance] = useState<bigint>(BigInt(0))
+  const [loading, setLoading] = useState(false)
+
+  const refresh = useCallback(async () => {
+    if (!walletAddress) return
+    setLoading(true)
+    try {
+      const provider = getProvider()
+      const bal = await provider.getBalance(walletAddress)
+      setBalance(bal)
+    } catch {}
+    finally { setLoading(false) }
+  }, [walletAddress])
+
+  useEffect(() => { refresh() }, [refresh])
+
+  return { balance, loading, refresh, formatted: ethers.formatEther(balance) }
+}
+
 // ── useTokenBalance hook ──────────────────────────────────────
 export function useTokenBalance(tokenAddress: string, walletAddress: string) {
   const [balance, setBalance] = useState<bigint>(BigInt(0))
   const [loading, setLoading] = useState(false)
 
-  useEffect(() => {
+  const refresh = useCallback(async () => {
     if (!tokenAddress || !walletAddress) return
-    async function load() {
-      setLoading(true)
-      try {
-        const provider = getProvider()
-        const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider)
-        const bal = await contract.balanceOf(walletAddress)
-        setBalance(bal)
-      } catch {}
-      finally { setLoading(false) }
-    }
-    load()
+    setLoading(true)
+    try {
+      const provider = getProvider()
+      const contract = new ethers.Contract(tokenAddress, ERC20_ABI, provider)
+      const bal = await contract.balanceOf(walletAddress)
+      setBalance(bal)
+    } catch {}
+    finally { setLoading(false) }
   }, [tokenAddress, walletAddress])
 
-  return { balance, loading, formatted: ethers.formatUnits(balance, 18) }
+  useEffect(() => { refresh() }, [refresh])
+
+  return { balance, loading, refresh, formatted: ethers.formatUnits(balance, 18) }
 }

@@ -20,7 +20,12 @@ async function fetchFollowerCount(handle: string): Promise<number | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const { tweet_url, wallet_address } = await req.json()
+  const body = await req.json()
+  const tweet_url = body.tweet_url
+  // Normalize to lowercase everywhere — Ethereum addresses are case-insensitive
+  // at the protocol level, only checksummed for display. Comparing/storing
+  // with mixed case risks a silent mismatch between requests.
+  const wallet_address: string = (body.wallet_address || '').toLowerCase()
   if (!tweet_url || !wallet_address) return NextResponse.json({ error: 'tweet_url and wallet_address required' }, { status: 400 })
   try {
     const oembedUrl = `https://publish.twitter.com/oembed?url=${encodeURIComponent(tweet_url)}`
@@ -48,19 +53,38 @@ export async function POST(req: NextRequest) {
       console.error('[verify-twitter] Could not extract handle. Raw oembed response:', JSON.stringify(oembed))
       throw new Error('Could not extract Twitter handle')
     }
+
     const proofMatch = html.match(/okl-verify:([^:\s]+):([^:\s<"]+)/)
-    if (!proofMatch) throw new Error('Verification proof not found in tweet')
-    const [, tweetWallet, tweetNonce] = proofMatch
-    if (tweetWallet.toLowerCase() !== wallet_address.toLowerCase()) throw new Error('Wallet address mismatch')
-    const { data: nonceRecord } = await supabaseAdmin.from('nonces').select('*').eq('wallet_address', wallet_address).eq('nonce', tweetNonce).single()
-    if (!nonceRecord) throw new Error('This code no longer matches — you may have generated a new one after posting this tweet. Go back and generate a fresh code, then post a new tweet with it.')
+    if (!proofMatch) {
+      console.error('[verify-twitter] Proof pattern not found. Raw embed HTML:', html)
+      throw new Error('Verification proof not found in tweet')
+    }
+    const [, tweetWalletRaw, tweetNonce] = proofMatch
+    const tweetWallet = tweetWalletRaw.toLowerCase()
+    if (tweetWallet !== wallet_address) {
+      console.error('[verify-twitter] Wallet mismatch.', { extracted: tweetWallet, request: wallet_address })
+      throw new Error('Wallet address mismatch')
+    }
+
+    const { data: nonceRecord } = await supabaseAdmin.from('nonces').select('*').eq('wallet_address', wallet_address).eq('nonce', tweetNonce).maybeSingle()
+    if (!nonceRecord) {
+      const { data: anyNonceForWallet } = await supabaseAdmin.from('nonces').select('*').eq('wallet_address', wallet_address).maybeSingle()
+      console.error('[verify-twitter] Nonce mismatch.', {
+        extracted_wallet: tweetWallet,
+        extracted_nonce: tweetNonce,
+        request_wallet: wallet_address,
+        current_db_nonce_for_wallet: anyNonceForWallet?.nonce ?? '(none found for this wallet at all)',
+        current_db_expires_at: anyNonceForWallet?.expires_at ?? null,
+      })
+      throw new Error('This code no longer matches — you may have generated a new one after posting this tweet. Go back and generate a fresh code, then post a new tweet with it.')
+    }
     if (nonceRecord.expires_at && new Date(nonceRecord.expires_at) < new Date()) {
       throw new Error('This code expired (codes last 30 minutes). Go back and generate a fresh one.')
     }
 
     const followerCount = await fetchFollowerCount(twitterHandle)
 
-    const { data: existing } = await supabaseAdmin.from('launchers').select('id').eq('wallet_address', wallet_address).single()
+    const { data: existing } = await supabaseAdmin.from('launchers').select('id').eq('wallet_address', wallet_address).maybeSingle()
     const updateData: Record<string, any> = { twitter_handle: twitterHandle, verified_at: new Date().toISOString(), verification_tweet: tweet_url }
     if (followerCount !== null) updateData.follower_count = followerCount
     if (existing) {

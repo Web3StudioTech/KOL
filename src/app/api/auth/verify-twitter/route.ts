@@ -87,10 +87,17 @@ export async function POST(req: NextRequest) {
     const { data: existing } = await supabaseAdmin.from('launchers').select('id').eq('wallet_address', wallet_address).maybeSingle()
     const updateData: Record<string, any> = { twitter_handle: twitterHandle, verified_at: new Date().toISOString(), verification_tweet: tweet_url }
     if (followerCount !== null) updateData.follower_count = followerCount
+    let saveError = null
     if (existing) {
-      await supabaseAdmin.from('launchers').update(updateData).eq('wallet_address', wallet_address)
+      const { error } = await supabaseAdmin.from('launchers').update(updateData).eq('wallet_address', wallet_address)
+      saveError = error
     } else {
-      await supabaseAdmin.from('launchers').insert({ wallet_address, ...updateData })
+      const { error } = await supabaseAdmin.from('launchers').insert({ wallet_address, ...updateData })
+      saveError = error
+    }
+    if (saveError) {
+      console.error('[verify-twitter] Failed to save to launchers:', saveError)
+      throw new Error(`Could not save verification: ${saveError.message}`)
     }
     await supabaseAdmin.from('nonces').delete().eq('wallet_address', wallet_address).eq('nonce', tweetNonce)
 
@@ -99,7 +106,11 @@ export async function POST(req: NextRequest) {
       await supabaseAdmin.rpc('check_wallet_badges', { p_wallet: wallet_address })
     }
 
-    const { data: launcher } = await supabaseAdmin.from('launchers').select('*').eq('wallet_address', wallet_address).single()
+    const { data: launcher, error: fetchError } = await supabaseAdmin.from('launchers').select('*').eq('wallet_address', wallet_address).single()
+    if (fetchError || !launcher) {
+      console.error('[verify-twitter] Save appeared to succeed but launcher not found on re-fetch:', fetchError)
+      throw new Error('Verification saved but could not be confirmed. Please try again.')
+    }
     return NextResponse.json({ success: true, launcher, twitter_handle: twitterHandle, follower_count: followerCount })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 400 })

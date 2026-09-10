@@ -290,7 +290,15 @@ https://onchainkol.com`}
                       <div style={{ fontSize:'40px', marginBottom:'12px' }}>⚠️</div>
                       <h2 style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'26px', letterSpacing:'1px', marginBottom:'8px', color:'var(--accent2)' }}>Verification Failed</h2>
                       <div style={{ padding:'10px 14px', background:'rgba(255,61,107,0.1)', border:'1px solid rgba(255,61,107,0.2)', borderRadius:'3px', color:'var(--accent2)', fontSize:'13px', marginBottom:'20px', textAlign:'left' }}>{error}</div>
-                      <button className="btn btn-primary" onClick={() => { setError(''); setStep('tweet') }}>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setError('')
+                          // A dead/mismatched code needs a fresh one — retrying the same tweet would just fail again
+                          const needsFreshCode = error.toLowerCase().includes('code') || error.toLowerCase().includes('nonce')
+                          setStep(needsFreshCode ? 'nonce' : 'tweet')
+                        }}
+                      >
                         ← Try Again
                       </button>
                     </>

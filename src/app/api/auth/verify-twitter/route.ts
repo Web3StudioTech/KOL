@@ -53,7 +53,10 @@ export async function POST(req: NextRequest) {
     const [, tweetWallet, tweetNonce] = proofMatch
     if (tweetWallet.toLowerCase() !== wallet_address.toLowerCase()) throw new Error('Wallet address mismatch')
     const { data: nonceRecord } = await supabaseAdmin.from('nonces').select('*').eq('wallet_address', wallet_address).eq('nonce', tweetNonce).single()
-    if (!nonceRecord) throw new Error('Invalid or expired nonce')
+    if (!nonceRecord) throw new Error('This code no longer matches — you may have generated a new one after posting this tweet. Go back and generate a fresh code, then post a new tweet with it.')
+    if (nonceRecord.expires_at && new Date(nonceRecord.expires_at) < new Date()) {
+      throw new Error('This code expired (codes last 30 minutes). Go back and generate a fresh one.')
+    }
 
     const followerCount = await fetchFollowerCount(twitterHandle)
 

@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
       console.error('[verify-twitter] Could not extract handle. Raw oembed response:', JSON.stringify(oembed))
       throw new Error('Could not extract Twitter handle')
     }
-    const proofMatch = html.match(/okl-verify:([^:]+):([^:]+):([^"<\s]+)/)
+    const proofMatch = html.match(/okl-verify:([^:\s]+):([^:\s<"]+)/)
     if (!proofMatch) throw new Error('Verification proof not found in tweet')
     const [, tweetWallet, tweetNonce] = proofMatch
     if (tweetWallet.toLowerCase() !== wallet_address.toLowerCase()) throw new Error('Wallet address mismatch')

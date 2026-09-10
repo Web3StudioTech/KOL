@@ -231,7 +231,7 @@ https://onchainkol.com`}
                   </button>
 
                   {/* Open Twitter button */}
-                  <a
+                  
                     href={tweetLink}
                     target="_blank"
                     className="btn btn-primary"
@@ -279,9 +279,22 @@ https://onchainkol.com`}
               {/* Step 4 — Verifying */}
               {step === 'verify' && (
                 <div style={{ background:'var(--bg2)', border:'1px solid var(--border)', borderRadius:'4px', padding:'32px', textAlign:'center' }}>
-                  <div style={{ width:48, height:48, border:'4px solid var(--border)', borderTopColor:'var(--accent)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 16px' }} />
-                  <h2 style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'28px', letterSpacing:'1px', marginBottom:'8px' }}>Verifying...</h2>
-                  <p style={{ color:'var(--muted)', fontSize:'14px' }}>Reading your tweet and verifying your wallet address...</p>
+                  {!error ? (
+                    <>
+                      <div style={{ width:48, height:48, border:'4px solid var(--border)', borderTopColor:'var(--accent)', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 16px' }} />
+                      <h2 style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'28px', letterSpacing:'1px', marginBottom:'8px' }}>Verifying...</h2>
+                      <p style={{ color:'var(--muted)', fontSize:'14px' }}>Reading your tweet and verifying your wallet address...</p>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize:'40px', marginBottom:'12px' }}>⚠️</div>
+                      <h2 style={{ fontFamily:'Bebas Neue,sans-serif', fontSize:'26px', letterSpacing:'1px', marginBottom:'8px', color:'var(--accent2)' }}>Verification Failed</h2>
+                      <div style={{ padding:'10px 14px', background:'rgba(255,61,107,0.1)', border:'1px solid rgba(255,61,107,0.2)', borderRadius:'3px', color:'var(--accent2)', fontSize:'13px', marginBottom:'20px', textAlign:'left' }}>{error}</div>
+                      <button className="btn btn-primary" onClick={() => { setError(''); setStep('tweet') }}>
+                        ← Try Again
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
 

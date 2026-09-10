@@ -28,10 +28,26 @@ export async function POST(req: NextRequest) {
     if (!res.ok) throw new Error('Could not fetch tweet. Make sure it is public.')
     const oembed = await res.json()
     const authorUrl: string = oembed.author_url || ''
-    const handleMatch = authorUrl.match(/twitter\.com\/([^/]+)/)
-    const twitterHandle = handleMatch ? handleMatch[1] : null
-    if (!twitterHandle) throw new Error('Could not extract Twitter handle')
     const html: string = oembed.html || ''
+
+    // X's oEmbed has been inconsistent post-2023 — accept both domains,
+    // and fall back to pulling the handle out of the embed HTML itself
+    // if author_url is missing or doesn't match.
+    let twitterHandle: string | null = null
+    const authorMatch = authorUrl.match(/(?:twitter|x)\.com\/([^/?]+)/)
+    if (authorMatch) {
+      twitterHandle = authorMatch[1]
+    } else {
+      // Embed HTML usually contains a link like
+      // href="https://twitter.com/HANDLE?ref_src=..."> just before the tweet permalink
+      const htmlMatch = html.match(/(?:twitter|x)\.com\/([^/"?]+)\/status\//)
+      if (htmlMatch) twitterHandle = htmlMatch[1]
+    }
+
+    if (!twitterHandle) {
+      console.error('[verify-twitter] Could not extract handle. Raw oembed response:', JSON.stringify(oembed))
+      throw new Error('Could not extract Twitter handle')
+    }
     const proofMatch = html.match(/okl-verify:([^:]+):([^:]+):([^"<\s]+)/)
     if (!proofMatch) throw new Error('Verification proof not found in tweet')
     const [, tweetWallet, tweetNonce] = proofMatch

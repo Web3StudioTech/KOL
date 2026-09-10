@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   const { wallet_address } = await req.json()
   if (!wallet_address) return NextResponse.json({ error: 'wallet_address required' }, { status: 400 })
   const nonce = generateNonce()
-  const expires_at = new Date(Date.now() + 10 * 60 * 1000).toISOString()
+  const expires_at = new Date(Date.now() + 30 * 60 * 1000).toISOString()
   await supabaseAdmin.from('nonces').upsert({ wallet_address, nonce, action: 'auth', expires_at })
   return NextResponse.json({ nonce, expires_at })
 }

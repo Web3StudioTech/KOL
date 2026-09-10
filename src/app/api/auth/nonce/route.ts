@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 import { generateNonce } from '@/lib/auth'
 export async function POST(req: NextRequest) {
-  const { wallet_address } = await req.json()
+  const body = await req.json()
+  const wallet_address: string = (body.wallet_address || '').toLowerCase()
   if (!wallet_address) return NextResponse.json({ error: 'wallet_address required' }, { status: 400 })
   const nonce = generateNonce()
   const expires_at = new Date(Date.now() + 30 * 60 * 1000).toISOString()
